@@ -1,0 +1,145 @@
+{% extends 'layout/manage.html' %}
+{% load static %}]
+
+{% block content %}
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">{{ title }}</h4>
+      </div>
+      <div class="modal-body">
+            <form id="updateform">
+                {% csrf_token %}
+            {% for filed in form  %}
+                  {%  if filed.name == 'loaction' %}
+                <div class="form-group">
+                     <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+                       {% if filed.help_text %}
+                        <span>{{ filed.help_text }}</span>
+                        {% endif %}
+                            <div class="row">
+                                 <div class="col-sm-7">
+                    {{ filed }}
+                    <span class="error-msg">{{ filed.errors.0 }}</span>
+                            </div>
+                              <div class="col-sm-5">
+
+                            <div class="btn btn-primary" id="locationbutton">获取当前位置</div>
+                              </div>
+                            </div>
+
+                        <span class="error-msg">{{ filed.errors.0 }}</span>
+                    </div>
+                {% else %}
+                <div class="form-group">
+                <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+                       {% if filed.help_text %}
+                        <span>{{ filed.help_text }}</span>
+                    {% endif %}
+                {{ filed }}
+                <span class="error-msg">{{ filed.errors.0 }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+            </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" id="closemodal">关闭</button>
+        <button type="button" class="btn btn-primary" id="updatebtn">提交</button>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+
+
+
+    $(document).ready(function() {
+        bindlocationsbtn();
+        bindClickSubmit();
+      $('#closemodal').click(function () {
+          history.back()
+          {#点击关闭返回上个界面#}
+
+    })
+
+});
+
+function bindlocationsbtn() {
+    $('#locationbutton').click(function () {
+        var url = 'https://apis.map.qq.com/ws/location/v1/ip?key=A3YBZ-NC5RU-MFYVV-BOHND-RO3OT-ABFCR&output=jsonp';
+        $.ajax({
+            url: url,
+            method: 'GET',
+            dataType: 'jsonp',
+              headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET,POST',
+                    },
+            success: function (data) {
+                var location = data.result.location;
+                var lat = location.lat;
+                var lng = location.lng;
+
+                $("#id_loaction").val(`${lat},${lng}`);
+                $('#id_loaction').prop('readonly', true);
+
+            },
+            error: function (error) {
+                console.error('获取位置失败:', error);
+            }
+        });
+    });
+}
+function bindClickSubmit() {
+    $("#updatebtn").click(function() {
+        $('.error-msg').empty();
+        var formData = $('#updateform').serializeArray();
+            var formObject = {};
+            for (var i = 0; i < formData.length; i++) {
+                formObject[formData[i].name] = formData[i].value;
+            }
+
+
+            if("{{ title }}"=='教师更新'){
+                var url="{% url 'web:deel_teacher' %}"
+
+            }
+             if("{{ title }}"=='考勤更新'){
+                     var url="{% url 'web:deel_course_record' %}"
+                }
+                if("{{ title }}"=='课程更新'){
+                var url="{% url "web:deel_course" %}";
+                }
+
+            if("{{ title }}"=='学生更新'){
+                   var url="{% url "web:deel_student" %}";
+            }
+
+        $.ajax({
+            url:url,
+            type: "POST",
+            {#拼接两个字典#}
+            data: {...{'type':'update'},...formObject},
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                   history.back()
+                } else {
+                    $.each(res.error, function(key, value) {
+                        $("#id_" + key).next().text(value[0]);
+                    });
+                }
+            },
+
+        });
+    })
+
+}
+
+
+    </script>
+{% endblock %}

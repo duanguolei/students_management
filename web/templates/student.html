@@ -1,0 +1,237 @@
+{% extends 'layout/manage.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="row">
+<div class="container-fluid" style="margin-top: 20px">
+
+    <div class="col-md-7">
+              <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-bar-chart" aria-hidden="true"></i>
+                        已选课程
+                    </div>
+                    <div class="panel-body">
+  <table class="table table-bordered">
+        <thead >
+          <tr>
+
+            <th>课程ID</th>
+            <th>课程名称</th>
+            <th>课程教师</th>
+            <th>班级人数</th>
+            <th>被警告次数</th>
+            <th>教师电话</th>
+
+          </tr>
+        </thead>
+        <tbody id="student_course">
+
+
+        </tbody>
+      </table>
+                    </div>
+                </div>
+    </div>
+        <div class="col-md-5">
+
+            <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-bar-chart" aria-hidden="true"></i>
+                        缺课统计
+                    </div>
+                    <div class="panel-body">
+                                 <div id="courser_cord_container" style="min-width:400px;height:400px"></div>
+                    </div>
+                </div>
+
+            <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <i class="fa fa-bar-chart" aria-hidden="true"></i>
+                        课程警告信息
+                    </div>
+                    <div class="panel-body">
+                      <table class="table table-bordered">
+        <thead >
+          <tr>
+
+            <th>ID</th>
+            <th>警告课程</th>
+            <th>课程ID</th>
+            <th>发起人</th>
+            <th>联系电话</th>
+              <th>发布时间</th>
+            <th>处理状态</th>
+
+
+          </tr>
+        </thead>
+        <tbody id="danger_table">
+
+
+        </tbody>
+      </table>
+                    </div>
+                </div>
+                    </div>
+                </div>
+
+</div>
+
+{% endblock %}
+
+{% block js %}
+    <script>
+    $(function () {
+        updatecoursedate();
+        updatedangertable();
+        chart_not_course();
+    })
+    function updatecoursedate() {
+         $.ajax({
+            url: "{% url 'web:student_course_data' %}",
+            type: "POST",
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    var tobody=$('#student_course');
+                    tobody.empty();
+                    data=res.data;
+                    $.each(data,function (key,value) {
+                        var tr=$("<tr>");
+
+                        tr.append($("<td>").text(value.id));
+                        tr.append($("<td>").text(value.name));
+                        tr.append($("<td>").text(value.teacher));
+                        tr.append($("<td>").text(value.counts));
+                        tr.append($("<td>").text(value.danger_counts));
+                           tr.append($("<td>").text(value.phone));
+
+                        tobody.append(tr);
+                        console.log(tobody)
+
+                    })
+
+
+
+                } else {
+                  alert(res.data)
+                }
+            },
+
+        });
+
+    }
+    function chart_not_course() {
+          var config={
+                chart: {
+                    type: 'column'
+                },
+                title: {
+                    text: '学生签到统计'
+                },
+                    credits:{
+                    enabled:false
+                    },
+
+                xAxis: {
+
+                    crosshair: true
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: '签到次数'
+                    }
+                },
+                tooltip: {
+                    // head + 每个 point + footer 拼接成完整的 table
+                    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                    '<td style="padding:0"><b>{point.y:.0f} 次</b></td></tr>',
+                    footerFormat: '</table>',
+                    shared: true,
+                    useHTML: true
+                },
+                plotOptions: {
+                    column: {
+                        borderWidth: 0
+                    }
+                },
+                series: [],
+            };
+        $.ajax({
+                    url:'{% url "web:student_course_cords_data" %}',
+                    method: "POST",
+                    dataType:'JSON',
+                    success:function (res) {
+                        if(res.status){
+                            var data=res.data;
+                            var categories=res.categories;
+                            config.xAxis.categories=categories;
+                            config.series=data;
+                            var chart = Highcharts.chart('courser_cord_container',config);
+
+                        }
+
+                    }
+                })
+
+
+    }
+    function handdeel(){
+          $.ajax({
+                                   url:"{% url 'web:deel_waring' %}",
+                                   method:'POST',
+                                   data:{id:$(this).data().id},
+                                   dataType:'JSON',
+                                   success:function (res) {
+                                       if(res.status){
+                                           updatedangertable();
+                                       }
+                                   }
+
+                               })}
+
+      function updatedangertable() {
+    $.ajax({
+        url: "{% url 'web:student_dangers_data' %}",
+        type: "POST",
+        dataType: "JSON",
+        success: function(res) {
+            if (res['status']) {
+                var dangerBtnIds = [];
+                var tobody = $('#danger_table');
+                tobody.empty();
+                data = res.data;
+                $.each(data, function(key, value) {
+                    var tr = $("<tr>");
+                    tr.append($("<td>").text(value.id));
+                    tr.append($("<td>").text(value.course));
+                    tr.append($("<td>").text(value.course_id));
+                    tr.append($("<td>").text(value.creator));
+                    tr.append($("<td>").text(value.phone));
+                    tr.append($("<td>").text(value.create_datetime));
+
+                    if (value.status == '已处理') {
+                        tr.append($("<td>").append($("<button>").attr('class', 'btn btn-success').attr('disabled', true).text('已处理')));
+                    } else {
+                        tr.append($("<td>").append($("<button>").attr('class', 'btn btn-danger').attr('id', 'danger_button_' + value.id).attr('data-id', value.id).text('处理')));
+                        dangerBtnIds.push('#danger_button_' + value.id);
+                    }
+                    tobody.append(tr);
+                });
+                dangerBtnIds.forEach(function(btnId) {
+                    $(btnId).click(handdeel);
+                });
+            } else {
+                alert(res.data);
+            }
+        },
+    });
+}
+
+
+    </script>
+{% endblock js %}

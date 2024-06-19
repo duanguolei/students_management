@@ -1,0 +1,300 @@
+{% extends 'layout/manage.html' %}
+{% load static %}
+
+{% block css %}
+    <style>
+       .verification-code-input {
+        display: flex;
+        justify-content: space-between;
+        width: 200px;
+    }
+
+    .verification-code-input input {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-right: 5px;
+    }
+    </style>
+{% endblock %}
+
+    {% block content %}
+    <div class="panel panel-default">
+   <div class="panel-heading">考勤管理</div>
+  <div class="panel-body">
+    <table id="course_cord_table">
+
+      </table>
+
+  </div>
+</div>
+
+
+<div class="modal fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">定位签到</h4>
+      </div>
+      <div class="modal-body">
+            <form id="addform">
+                {% csrf_token %}
+            {% for filed in form %}
+
+                <div class="form-group">
+                     <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+                            <div class="row">
+                                 <div class="col-sm-7">
+                    {{ filed }}
+                    <span class="error-msg">{{ filed.errors.0 }}</span>
+                            </div>
+                              <div class="col-sm-5">
+
+                            <div class="btn btn-primary" value="location" id="locationbutton">获取当前位置</div>
+                              </div>
+                            </div>
+
+                        <span class="error-msg">{{ filed.errors.0 }}</span>
+                    </div>
+
+            {% endfor %}
+            </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+        <button type="button" class="btn btn-primary" id="addbtn">签到</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="codeModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">口令签到</h4>
+      </div>
+      <div class="modal-body">
+            <form id="addform">
+                {% csrf_token %}
+            {% for filed in form1 %}
+
+                <div class="form-group">
+                     <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+
+
+                      <div class="verification-code-input">
+                <input type="text" id="code1" maxlength="1">
+                <input type="text" id="code2" maxlength="1">
+                <input type="text" id="code3" maxlength="1">
+                <input type="text" id="code4" maxlength="1">
+                    </div>
+
+
+                    <span class="error-msg">{{ filed.errors.0 }}</span>
+
+                        <span class="error-msg">{{ filed.errors.0 }}</span>
+                    </div>
+
+            {% endfor %}
+            </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+        <button type="button" class="btn btn-primary" id="addbtn2">签到</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+
+
+$(function () {
+
+
+bindClickSubmit();
+bindlocationsbtn()
+
+})
+
+function bindlocationsbtn() {
+   $('#locationbutton').click(function () {
+      var url = 'https://apis.map.qq.com/ws/location/v1/ip?key='+ '{{   request.tencentapi }}' +'&output=jsonp';
+
+            $.ajax({
+            url: url,
+            method: 'GET',
+            dataType: 'jsonp',
+              headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET,POST',
+                    },
+            success: function (data) {
+                var location = data.result.location;
+                var lat = location.lat;
+                var lng = location.lng;
+
+                $("#id_loaction").val(`${lat},${lng}`);
+                $('#id_loaction').prop('readonly', true);
+
+            },
+            error: function (error) {
+                console.error('获取位置失败:', error);}})
+            ;}
+
+   );
+}
+function bindClickSubmit() {
+    $("#addbtn").click(function() {
+        $('.error-msg').empty();
+        data={
+            loaction:$('#id_loaction').val(),
+            id:$('#addbtn').data().id,
+        }
+        $.ajax({
+            url: "{% url 'web:student_course_record' %}",
+            type: "POST",
+            data: data,
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+
+                    location.reload();
+                } else {
+                    $('.error-msg').text(res.error)
+                }
+            },
+
+        });
+    });
+      $("#addbtn2").click(function() {
+        $('.error-msg').empty();
+         var code1 = $('#code1').val();
+            var code2 =  $('#code2').val();
+            var code3 = $('#code3').val();
+            var code4 = $('#code4').val();
+
+            var code = code1 + code2 + code3 + code4;
+        data={
+            code:code,
+            id:$('#addbtn').data().id,
+        }
+        $.ajax({
+            url: "{% url 'web:student_course_record' %}",
+            type: "POST",
+            data: data,
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+
+                    location.reload();
+                } else {
+                    $('.error-msg').text(res.error)
+                }
+            },
+
+        });
+    });
+}
+
+
+
+
+            window.operateEvents = {
+            'click .search':function (e,value,row,index) {
+                $('#addbtn').attr('data-id',row.id);
+                $('#addbtn2').attr('data-id',row.id)
+
+
+            }
+        };
+
+        $('#course_cord_table').bootstrapTable({
+            url: '{% url "web:course_record_data" %}',         //请求后台的 URL（*）
+            method: 'get',                      //请求方式（*）
+            // data: data,                      //当不使用上面的后台请求时，使用data来接收数据
+            toolbar: '#toolbar',                //工具按钮用哪个容器
+            striped: true,                      //是否显示行间隔色
+            cache: false,                       //是否使用缓存，默认为 true，所以一般情况下需要设置一下这个属性（*）
+            pagination: true,                   //是否显示分页（*）
+            sortable: false,                    //是否启用排序
+            sortOrder: "asc",                   //排序方式
+            sidePagination: "client",           //分页方式：client 客户端分页，server 服务端分页（*）
+            pageNumber:1,                       //初始化加载第一页，默认第一页
+            pageSize: 10,                        //每页的记录行数（*）
+            pageList: [10, 25, 50, 100],        //可供选择的每页的行数（*）
+            search: true,                       //是否显示表格搜索，此搜索是客户端搜索，不会进服务端，所以个人感觉意义不大
+            strictSearch: true,                 //启用严格搜索。禁用比较检查。
+            showColumns: true,                  //是否显示所有的列
+            showRefresh: true,                  //是否显示刷新按钮
+            minimumCountColumns: 2,             //最少允许的列数
+            clickToSelect: true,                //是否启用点击选中行
+            height: 700,                        //行高，如果没有设置 height 属性，表格自动根据记录条数觉得表格高度
+            uniqueId: "ID",                     //每一行的唯一标识，一般为主键列
+            showToggle:true,                    //是否显示详细视图和列表视图的切换按钮
+            cardView: false,                    //是否显示详细视图
+            detailView: false,                  //是否显示父子表
+            showExport: true,                   //是否显示导出
+            exportDataType: "basic",            //basic', 'all', 'selected'.
+            columns: [{
+                checkbox: true     //复选框标题，就是我们看到可以通过复选框选择整行。
+            }, {
+                field: 'id', title: '考勤ID'       //我们取json中id的值，并将表头title设置为ID
+            },
+                {
+                field: 'teacher', title: '教师'         //我们取 json 中 username 的值，并将表头 title 设置为用户名
+            },{
+                field: 'sign_counts', title: '签到人数'                //我们取 json 中 sex 的值，并将表头 title 设置为性别
+            },
+                {
+                field: 'counts', title: '班级人数'                //我们取 json 中 sex 的值，并将表头 title 设置为性别
+            },
+                {
+                  field:'course'  ,title:'签到课程'
+                },
+            {
+                field: 'end_datetime', title: '结束时间'               //我们取 json 中 sign 的值，并将表头 title 设置为签名
+            }
+            , {
+                    //ormatter:function(value,row,index) 对后台传入数据 进行操作 对数据重新赋值 返回 return 到前台
+                    // events 触发事件
+                    field: 'Button',
+                    title: "",
+                    align: 'center',
+                    events: operateEvents,
+                    formatter: function (value, row, index) {
+                        if (row.sign) {
+                            var search = '<button type="button" class="btn btn-success"  style="margin: 5px" disabled>已签到</button>';
+                        } else {
+                            if(row.code){
+                            var search = '<button type="button" class="btn btn-primary search" data-toggle="modal" data-target="#codeModal"  style="margin: 5px">口令签到</button>';
+                            }
+                            else{
+                                 var search = '<button type="button" class="btn btn-info search" data-toggle="modal" data-target="#searchModal"  style="margin: 5px">定位签到</button>';
+
+                            }
+                        }
+
+
+                        return [search].join('');
+                    }
+
+
+            }
+            ],
+            responseHandler: function (res) {
+                return res.data      //在加载远程数据之前，处理响应数据格式.
+                // 我们取的值在data字段中，所以需要先进行处理，这样才能获取我们想要的结果
+            }
+        });
+
+    </script>
+{% endblock %}

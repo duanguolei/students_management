@@ -1,0 +1,92 @@
+{% extends 'layout/manage.html' %}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static 'web/css/account.css' %}">
+
+{% endblock %}
+
+{% block content %}
+
+    <div class="account" style="margin-top: 5%">
+    <div class="title">{% if register_name %}{{ register_name }}{% endif %}注册</div>
+    <div class="form">
+        <form id="registerfrom">
+            {% csrf_token %}
+            {% for filed in form %}
+            {% if filed.name == 'code' %}
+                <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+
+                <div class="row">
+                <div class="col-sm-7">
+                    {{ filed }}
+                    <span class="error-msg">{{ filed.errors.0 }}</span>
+                </div>
+                <div class="col-sm-5>">
+                    <img id='captch' src="{% url 'web:capth' %}">
+                </div>
+                </div>
+                {% else %}
+                <div class="form-group">
+                <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+                    {% if filed.help_text %}
+                        <span>{{ filed.help_text }}</span>
+                    {% endif %}
+                {{ filed }}
+                <span class="error-msg">{{ filed.errors.0 }}</span>
+                </div>
+
+                {% endif %}
+
+            {% endfor %}
+        </form>
+        <hr/>
+       <button type="button" id="registerbtn" class="btn btn-primary btn-block">注册</button>
+        <div style="float: right">
+        <a href="{% url 'web:login' %}">已有账号去登录</a>
+            </div>
+
+
+    </div>
+    </div>
+
+
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+    bindClickSubmit();
+    bindCaptch();
+});
+
+function bindClickSubmit() {
+    $("#registerbtn").click(function() {
+        $('.error-msg').empty();
+        $.ajax({
+            url: "{% url 'web:register' %}",
+            type: "POST",
+            data: $('#registerfrom').serialize(),
+            dataType: "JSON",
+            success: function(res) {
+                console.log(res)
+                if (res['status']) {
+                    location.href ='{% url "web:login" %}';
+                } else {
+                    $.each(res.error, function(key, value) {
+                        $("#id_" + key).next().text(value[0]);
+                    });
+                }
+            },
+
+        });
+    });
+}
+
+function bindCaptch() {
+    $("#captch").click(function() {
+         var oldSrc=$(this).attr('src');
+         $(this).attr('src',oldSrc+'?');
+    })
+}
+</script>
+{% endblock %}

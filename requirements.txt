@@ -1,0 +1,5 @@
+Django==5.0.3
+django_cors_headers==4.3.1
+geopy==2.4.1
+Pillow==10.3.0
+PyMySQL==1.1.0

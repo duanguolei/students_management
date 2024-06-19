@@ -1,0 +1,387 @@
+{% extends 'layout/manage.html' %}
+{% load static %}
+{% load user %}
+{% block content %}
+    <div class="panel panel-default">
+   <div class="panel-heading">教师管理</div>
+  <div class="panel-body">
+   <a class="btn btn-success btn-sm" data-toggle="modal" data-target="#addModal" >新建教师</a>
+      <table id="student_table">
+
+      </table>
+
+  </div>
+</div>
+
+
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">新建教师</h4>
+      </div>
+      <div class="modal-body">
+            <form id="addform">
+                {% csrf_token %}
+            {% for filed in form %}
+                    {% if filed.name == 'code' %}
+                <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+                <div class="row">
+                <div class="col-sm-7">
+                    {{ filed }}
+                    <span class="error-msg">{{ filed.errors.0 }}</span>
+                </div>
+                <div class="col-sm-5>">
+                    <img id='captch' src="{% url 'web:capth' %}">
+                </div>
+                </div>
+                {% else %}
+                <div class="form-group">
+                <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+                       {% if filed.help_text %}
+                        <span>{{ filed.help_text }}</span>
+                    {% endif %}
+                {{ filed }}
+                <span class="error-msg">{{ filed.errors.0 }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+            </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+        <button type="button" class="btn btn-primary" id="addbtn">提交</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">教师课程</h4>
+      </div>
+      <div class="modal-body">
+        <table class="table table-hover" >
+
+      <thead>
+        <tr>
+          <th>课程id</th>
+          <th>课程名称</th>
+          <th>课程人数</th>
+          <th>上课教室</th>
+          <th>授课老师</th>
+          <th>创建时间</th>
+
+        </tr>
+      </thead>
+      <tbody id="studenttable">
+
+      </tbody>
+
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="courseModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+         <div id="courser_cord_container" style="min-width:400px;height:400px"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div class="modal fade" id="passwordModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+                <div class="title">更改密码</div>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+              <div class="form-group">
+    <label>新密码</label>
+    <input type="password" class="form-control" name='newpassword' id="newpassword" placeholder="新密码">
+  </div>
+            <div class="form-group">
+    <label>再次确认密码</label>
+    <input type="password" class="form-control" name='repassword' id="repassword" placeholder="确认密码">
+  </div>
+
+      </div>
+      <div class="modal-footer">
+          <div class="btn btn-success" id="passwordbtn" style="margin-left: 40%">确认</div>
+
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+
+      </div>
+          <div id="error" class="alert alert-danger alert-dismissible fade in"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+    <script>
+                $(document).ready(function() {
+    bindClickSubmit();
+    bindCaptch();
+ bindChangepassword()
+});
+
+                function  bindChangepassword() {
+
+
+        $("#passwordbtn").click(function() {
+                 var  error=$('#error');
+                 var next_falge=true;
+                 error.empty();
+            var newpassword=$('#newpassword')
+            var repassword=$('#repassword')
+            var data={
+                newpassword:newpassword.val(),
+                repassword:repassword.val(),
+                type:'teacher',
+                id:$("#passwordbtn").data().id,
+            }
+            if( !newpassword.val() | !repassword.val()){
+                 error.text("密码字段不能为空");
+                next_falge=false;
+            }
+
+            if(newpassword.val()!=repassword.val()){
+                error.text("两次密码不一致请重新输入");
+                next_falge=false;
+            }
+
+               if(newpassword.val().length<6){
+                error.text("密码不小于6位");
+                next_falge=false;
+            }
+
+        if(next_falge){
+
+        $.ajax({
+            url: "{% url 'web:update_password' %}",
+            type: "POST",
+            data: data,
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                      error.text(res.data)
+
+                } else {
+                    error.text(res.data)
+                }
+
+        }
+    });
+}
+        })
+}
+
+function bindCaptch() {
+    $("#captch").click(function() {
+         var oldSrc=$(this).attr('src');
+         $(this).attr('src',oldSrc+'?');
+    })
+}
+function bindClickSubmit() {
+    $("#addbtn").click(function() {
+        $('.error-msg').empty();
+        $.ajax({
+            url: "{% url 'web:manage_teacher' %}",
+            type: "POST",
+            data: $('#addform').serialize(),
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    location.reload();
+                } else {
+                    $.each(res.error, function(key, value) {
+                        $("#id_" + key).next().text(value[0]);
+                    });
+                }
+            },
+
+        });
+    });
+}
+
+
+    </script>
+    <script>
+
+
+            window.operateEvents = {
+            // 当点击 class=delete 时触发
+            'click .delete': function (e,value,row,index) {
+                var id=row.id;
+                       $.ajax({
+            url: "{% url 'web:deel_teacher' %}",
+            type: "POST",
+            data: {id:id,type:'delete'},
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    location.reload();
+                } else {
+                  alert(res.data)
+                }
+            },
+
+        });
+            },
+                    'click .search':function (e,value,row,index) {
+                     var id=row.id;
+                       $.ajax({
+            url: "{% url 'web:manage_teacher_course_data' %}",
+            type: "POST",
+            data: {id:id},
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    var tobody=$('#studenttable');
+                    tobody.empty();
+                    data=res.data;
+
+                    $.each(data,function (key,value) {
+                        var tr=$("<tr>");
+
+                        tr.append($("<td>").text(value.id));
+                        tr.append($("<td>").text(value.name));
+                        tr.append($("<td>").text(value.join_counts));
+                        tr.append($("<td>").text(value.classes));
+                        tr.append($("<td>").text(value.teacher));
+                        tr.append($("<td>").text(value.create_date));
+                        tobody.append(tr);
+
+
+                    })
+
+
+
+                } else {
+                  alert(res.data)
+                }
+            },
+
+        });
+                }
+                ,
+                 'click #updateModal': function (e,value,row,index) {
+
+                var id=row.id;
+                 $.ajax({
+            url: "{% url 'web:updateform' %}",
+            type: "POST",
+            data: {'title':'教师更新',id:id,type:'updata'},
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    location.href=res.data;
+                } else {
+                  alert(res.data)
+                }
+            },
+
+        });
+            },
+
+                'click #updatepassword':function (e,value,row,index) {
+                           $("#passwordbtn").attr('data-id',row.id);
+
+                }
+        };
+
+        $('#student_table').bootstrapTable({
+            url: '{% url "web:manage_teacher_data" %}',         //请求后台的 URL（*）
+            method: 'get',                      //请求方式（*）
+            // data: data,                      //当不使用上面的后台请求时，使用data来接收数据
+            toolbar: '#toolbar',                //工具按钮用哪个容器
+            striped: true,                      //是否显示行间隔色
+            cache: false,                       //是否使用缓存，默认为 true，所以一般情况下需要设置一下这个属性（*）
+            pagination: true,                   //是否显示分页（*）
+            sortable: false,                    //是否启用排序
+            sortOrder: "asc",                   //排序方式
+            sidePagination: "client",           //分页方式：client 客户端分页，server 服务端分页（*）
+            pageNumber:1,                       //初始化加载第一页，默认第一页
+            pageSize: 10,                        //每页的记录行数（*）
+            pageList: [10, 25, 50, 100],        //可供选择的每页的行数（*）
+            search: true,                       //是否显示表格搜索，此搜索是客户端搜索，不会进服务端，所以个人感觉意义不大
+            strictSearch: true,                 //启用严格搜索。禁用比较检查。
+            showColumns: true,                  //是否显示所有的列
+            showRefresh: true,                  //是否显示刷新按钮
+            minimumCountColumns: 2,             //最少允许的列数
+            clickToSelect: true,                //是否启用点击选中行
+            height: 700,                        //行高，如果没有设置 height 属性，表格自动根据记录条数觉得表格高度
+            uniqueId: "ID",                     //每一行的唯一标识，一般为主键列
+            showToggle:true,                    //是否显示详细视图和列表视图的切换按钮
+            cardView: false,                    //是否显示详细视图
+            detailView: false,                  //是否显示父子表
+            showExport: true,                   //是否显示导出
+            exportDataType: "basic",            //basic', 'all', 'selected'.
+            columns: [{
+                checkbox: true     //复选框标题，就是我们看到可以通过复选框选择整行。
+            }, {
+                field: 'id', title: 'ID'       //我们取json中id的值，并将表头title设置为ID
+            },
+                {
+                field: 'name', title: '名字'         //我们取 json 中 username 的值，并将表头 title 设置为用户名
+            },
+                  {
+                field: 'sex', title: '性别'         //我们取 json 中 username 的值，并将表头 title 设置为用户名
+            },{
+                field: 'idnumber', title: '证件号'                //我们取 json 中 sex 的值，并将表头 title 设置为性别
+            },
+                {
+                  field:'mobile_phone'  ,title:'电话号码'
+                },
+                {
+                    field:'password',title:'密码'
+                },
+                 {
+                    field:'email',title:'邮箱'
+                },
+                {
+                field: 'profession', title: '级别'               //我们取 json 中 city 的值，并将表头 title 设置为城市
+            },  {
+                field: 'college', title: '学院'               //我们取 json 中 city 的值，并将表头 title 设置为城市
+            },{
+                //ormatter:function(value,row,index) 对后台传入数据 进行操作 对数据重新赋值 返回 return 到前台
+                // events 触发事件
+                field: 'Button',title:"操作",align: 'center',events:operateEvents,formatter:function(value,row,index){
+                    var del = '<button type="button"  class="btn btn-danger delete" style="margin: 5px">删除</button>'
+                    var update = '<button type="button" class="btn btn-primary upgrade" id="updateModal" style="margin: 5px">更改信息</button>'
+                    var updatepassword = '<button type="button" class="btn btn-info " data-toggle="modal" id="updatepassword" data-target="#passwordModal"  style="margin: 5px">更改密码</button>'
+                    var search = '<button type="button" class="btn btn-info search" data-toggle="modal" data-target="#searchModal" style="margin: 5px">查看课程</button>'
+
+                    return [del,update, updatepassword,search].join('')
+                }
+            }
+            ],
+            responseHandler: function (res) {
+                return res.data      //在加载远程数据之前，处理响应数据格式.
+                // 我们取的值在data字段中，所以需要先进行处理，这样才能获取我们想要的结果
+            }
+        });
+
+    </script>
+{% endblock %}
+

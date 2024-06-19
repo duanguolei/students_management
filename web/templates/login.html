@@ -1,0 +1,91 @@
+{% extends 'layout/manage.html' %}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static 'web/css/account.css' %}">
+
+{% endblock %}
+
+{% block content %}
+
+    <div class="account" style="margin-top: 10%">
+    <div class="title">登录</div>
+    <div class="form">
+        <form id="loginfrom">
+            {% csrf_token %}
+            {% for filed in form %}
+{#                循环遍历表单#}
+            {% if filed.name == 'code' %}
+                <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+                <div class="row">
+                <div class="col-sm-7">
+                    {{ filed }}
+                    <span class="error-msg">{{ filed.errors.0 }}</span>
+                </div>
+                <div class="col-sm-5>">
+                    <img id='captch' src="{% url 'web:capth' %}">
+                </div>
+                </div>
+                {% else %}
+                <div class="form-group">
+                <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+                       {% if filed.help_text %}
+                        <span>{{ filed.help_text }}</span>
+                    {% endif %}
+                {{ filed }}
+                <span class="error-msg">{{ filed.errors.0 }}</span>
+                </div>
+
+                {% endif %}
+
+            {% endfor %}
+        </form>
+        <hr/>
+       <button type="button" id="loginbtn" class="btn btn-primary btn-block">登录</button>
+        <div style="float: right">
+        <a href="{% url 'web:register' %}">还没有账号?去注册</a>
+            </div>
+
+
+    </div>
+    </div>
+
+
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+    bindClickSubmit();
+    bindCaptch();
+});
+
+function bindClickSubmit() {
+    $("#loginbtn").click(function() {
+        $('.error-msg').empty();
+        $.ajax({
+            url: "{% url 'web:login' %}",
+            type: "POST",
+            data: $('#loginfrom').serialize(),
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    location.href = res.data;
+                } else {
+                    $.each(res.error, function(key, value) {
+                        $("#id_" + key).next().text(value[0]);
+                    });
+                }
+            },
+
+        });
+    });
+}
+
+function bindCaptch() {
+    $("#captch").click(function() {
+         var oldSrc=$(this).attr('src');
+         $(this).attr('src',oldSrc+'?');
+    })
+}
+</script>
+{% endblock %}

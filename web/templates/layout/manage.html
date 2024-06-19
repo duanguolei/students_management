@@ -1,0 +1,88 @@
+{% load static %}
+{% load user %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% block title %}
+
+        {% endblock %}
+    </title>
+
+    <link rel="stylesheet" href="{% static 'web/plugin/bookstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'web/plugin/font-awesome/css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'web/plugin/bootstrap-table/dist/bootstrap-table.min.css' %}">
+    <link rel="stylesheet" href="{% static 'web/plugin/datetimepicker/jquery.datetimepicker.css' %}">
+
+    {% block css %}
+    {% endblock %}
+<style>
+      .error-msg {
+            color: red;
+            position: absolute;
+            font-size: 13px;
+        }
+
+</style>
+</head>
+<body>
+
+ <nav class="navbar navbar-default">
+        <div class="navbar-header">
+            <div class="navbar-brand" href="#" style="text-align: center;">学生考勤管理系统
+                  {% if request.manage.level == 1 %}
+                        (学生端)
+                        {% endif %}
+                {% if request.manage.level == 2 %}
+                        (教师端)
+                        {% endif %}
+                {% if request.manage.level == 3 %}
+                        (管理员端)
+                        {% endif %}</div>
+        </div>
+
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                {% if request.manage.user.name %}
+            {% load_mune_list request %}
+{#                    导入菜单#}
+                {% endif %}
+
+            </ul>
+            {% if request.manage.user %}
+            <ul class="nav navbar-nav navbar-right" style="float: right">
+
+
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle avator" data-toggle="dropdown" role="button" aria-haspopup="true"
+                       aria-expanded="false">{{  request.manage.user.name | upper }} <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'web:user' %}">个人中心</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="{% url 'web:logout' %}">退 出</a></li>
+                    </ul>
+                </li>
+            </ul>
+            {% endif %}
+
+    </div>
+</nav>
+{% block content %}
+{% endblock %}
+
+
+</body>
+<script src="{% static 'web/js/3.7.1-jquery.min.js' %}"></script>
+<script src="{% static 'web/js/popper.min.js' %}"></script>
+<script src="{% static 'web/plugin/bookstrap/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'web/plugin/bootstrap-table/dist/bootstrap-table.min.js' %}"></script>
+<script src="{% static 'web/plugin/bootstrap-table/dist/locale/bootstrap-table-zh-CN.min.js' %}"></script>
+<script src="{% static 'web/plugin/datetimepicker/build/jquery.datetimepicker.full.min.js' %}"></script>
+<script src="{% static 'web/plugin/Highcharts-10.0.0/code/highcharts.js'%}"></script>
+<script src="{% static 'web/plugin/Highcharts-10.0.0/code/highcharts.src.js'%}"></script>
+        <script src="https://code.hcharts.cn/plugins/zh_cn.js"></script>
+
+{% block js %}
+{% endblock %}
+</html>

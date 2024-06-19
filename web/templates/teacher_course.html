@@ -1,0 +1,367 @@
+{% extends 'layout/manage.html' %}
+{% load static %}
+{% load user %}
+
+{% block content %}
+
+    <div class="panel panel-default">
+
+   <div class="panel-heading">课程管理</div>
+  <div class="panel-body">
+   <a class="btn btn-success btn-sm" data-toggle="modal" data-target="#addModal" >新建课程</a>
+      <table id="course_table">
+
+      </table>
+
+  </div>
+</div>
+
+
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">新建课程</h4>
+      </div>
+      <div class="modal-body">
+            <form id="addform">
+                {% csrf_token %}
+            {% for filed in form %}
+                <div class="form-group">
+                <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+                       {% if filed.help_text %}
+                        <span>{{ filed.help_text }}</span>
+                    {% endif %}
+                {{ filed }}
+                <span class="error-msg">{{ filed.errors.0 }}</span>
+                </div>
+            {% endfor %}
+            </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+        <button type="button" class="btn btn-primary" id="addbtn">提交</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">选课学生</h4>
+      </div>
+      <div class="modal-body">
+        <table class="table table-hover" >
+            <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>学生姓名</th>
+          <th>学号</th>
+          <th>班级</th>
+          <th>电话</th>
+          <th>邮箱</th>
+          <th>创建时间</th>
+
+        </tr>
+      </thead>
+      <tbody id="studenttable">
+
+      </tbody>
+    </table>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="courseModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+         <div id="courser_cord_container" style="min-width:400px;height:400px"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+    <script>
+                $(document).ready(function() {
+    bindClickSubmit();
+
+});
+
+function bindClickSubmit() {
+    $("#addbtn").click(function() {
+        $('.error-msg').empty();
+        $.ajax({
+            url: "{% url 'web:teacher_course' %}",
+            type: "POST",
+            data: $('#addform').serialize(),
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    location.reload();
+                } else {
+                    $.each(res.error, function(key, value) {
+                        $("#id_" + key).next().text(value[0]);
+                    });
+                }
+            },
+
+        });
+    });
+}
+
+
+    </script>
+    <script>
+    function binfupdate(){
+       $("#updatebtn").click(function() {
+        $('.error-msg').empty();
+        $.ajax({
+            url: "{% url 'web:teacher_course' %}",
+            type: "POST",
+            data: $('#updateform').serialize(),
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    location.reload();
+                } else {
+                    $.each(res.error, function(key, value) {
+                        $("#id_" + key).next().text(value[0]);
+                    });
+                }
+            },
+
+        });
+    });
+}
+
+            window.operateEvents = {
+            // 当点击 class=delete 时触发
+            'click .delete': function (e,value,row,index) {
+                var id=row.id;
+                       $.ajax({
+            url: "{% url 'web:deel_course' %}",
+            type:"POST",
+            data: {'type':'delete',id:id},
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    location.reload();
+                } else {
+                  alert(res.data)
+                }
+            },
+
+        });
+            },
+                'click .search':function (e,value,row,index) {
+                     var id=row.id;
+                       $.ajax({
+            url: "{% url 'web:course_student' %}",
+            type: "POST",
+            data: {id:id},
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    var tobody=$('#studenttable');
+                    tobody.empty();
+                    data=res.data;
+                    $.each(data,function (key,value) {
+                        var tr=$("<tr>");
+                        tr.append($("<td>").text(value.name));
+                        tr.append($("<td>").text(value.id));
+                        tr.append($("<td>").text(value.phone));
+                        tr.append($("<td>").text(value.classes));
+                        tr.append($("<td>").text(value.emial));
+                        tr.append($("<td>").text(value.create_date));
+                        tobody.append(tr);
+
+
+                    })
+
+
+
+                } else {
+                  alert(res.data)
+                }
+            },
+
+        });
+                }
+                ,
+                 'click #updateModal': function (e,value,row,index) {
+                var id=row.id;
+                 $.ajax({
+            url: "{% url 'web:updateform' %}",
+            type: "POST",
+            data: {'title':'课程更新',id:id,type:'updata'},
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    location.href=res.data;
+                } else {
+                  alert(res.data)
+                }
+            },
+
+        });
+            },
+            'click #couser_cord':function (e,value,row,index) {
+                var id=row.id;
+                var config={
+                chart: {
+                    type: 'column'
+                },
+                title: {
+                    text: '学生考勤情况统计'
+                },
+                    credits:{
+                    enabled:false
+                    },
+
+                xAxis: {
+                    categories: [
+                        '一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'
+                    ],
+                    crosshair: true
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: '签到次数'
+                    }
+                },
+                tooltip: {
+                    // head + 每个 point + footer 拼接成完整的 table
+                    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                    '<td style="padding:0"><b>{point.y:.0f} 次</b></td></tr>',
+                    footerFormat: '</table>',
+                    shared: true,
+                    useHTML: true
+                },
+                plotOptions: {
+                    column: {
+                        borderWidth: 0
+                    }
+                },
+                series: [{
+                    name: '东京',
+                    data: [49.9, 71.5, 106.4, 129.2, 144.0, 176.0, 135.6, 148.5, 216.4, 194.1, 95.6, 54.4]
+                }, {
+                    name: '纽约',
+                    data: [83.6, 78.8, 98.5, 93.4, 106.0, 84.5, 105.0, 104.3, 91.2, 83.5, 106.6, 92.3]
+                }, {
+                    name: '伦敦',
+                    data: [48.9, 38.8, 39.3, 41.4, 47.0, 48.3, 59.0, 59.6, 52.4, 65.2, 59.3, 51.2]
+                }, {
+                    name: '柏林',
+                    data: [42.4, 33.2, 34.5, 39.7, 52.6, 75.5, 57.4, 60.4, 47.6, 39.1, 46.8, 51.1]
+                }]
+            };
+                $.ajax({
+                    url:'{% url "web:course_cords_data" %}',
+                    type: "GET",
+                    dataType:'JSON',
+                    data:{id:id},
+                    success:function (res) {
+                        if(res.status){
+                            var data=res.data;
+                            var categories=res.categories;
+                            config.xAxis.categories=categories;
+                            config.series=data;
+                            var chart = Highcharts.chart('courser_cord_container',config);
+
+                        }
+
+                    }
+                })
+
+
+            }
+        };
+
+        $('#course_table').bootstrapTable({
+            url: '{% url "web:course_data" %}',         //请求后台的 URL（*）
+            method: 'get',                      //请求方式（*）
+            // data: data,                      //当不使用上面的后台请求时，使用data来接收数据
+            toolbar: '#toolbar',                //工具按钮用哪个容器
+            striped: true,                      //是否显示行间隔色
+            cache: false,                       //是否使用缓存，默认为 true，所以一般情况下需要设置一下这个属性（*）
+            pagination: true,                   //是否显示分页（*）
+            sortable: false,                    //是否启用排序
+            sortOrder: "asc",                   //排序方式
+            sidePagination: "client",           //分页方式：client 客户端分页，server 服务端分页（*）
+            pageNumber:1,                       //初始化加载第一页，默认第一页
+            pageSize: 10,                        //每页的记录行数（*）
+            pageList: [10, 25, 50, 100],        //可供选择的每页的行数（*）
+            search: true,                       //是否显示表格搜索，此搜索是客户端搜索，不会进服务端，所以个人感觉意义不大
+            strictSearch: true,                 //启用严格搜索。禁用比较检查。
+            showColumns: true,                  //是否显示所有的列
+            showRefresh: true,                  //是否显示刷新按钮
+            minimumCountColumns: 2,             //最少允许的列数
+            clickToSelect: true,                //是否启用点击选中行
+            height: 700,                        //行高，如果没有设置 height 属性，表格自动根据记录条数觉得表格高度
+            uniqueId: "ID",                     //每一行的唯一标识，一般为主键列
+            showToggle:true,                    //是否显示详细视图和列表视图的切换按钮
+            cardView: false,                    //是否显示详细视图
+            detailView: false,                  //是否显示父子表
+            showExport: true,                   //是否显示导出
+            exportDataType: "basic",            //basic', 'all', 'selected'.
+            columns: [{
+                checkbox: true     //复选框标题，就是我们看到可以通过复选框选择整行。
+            }, {
+                field: 'id', title: 'ID'       //我们取json中id的值，并将表头title设置为ID
+            },
+                {
+                field: 'name', title: '课程名称'         //我们取 json 中 username 的值，并将表头 title 设置为用户名
+            },{
+                field: 'teacher', title: '授课教师'                //我们取 json 中 sex 的值，并将表头 title 设置为性别
+            },
+                {
+                  field:'counts'  ,title:'课程预设人数'
+                },
+                {
+                    field:'join_counts',title:'参加人数'
+                },
+                {
+                field: 'classroom', title: '上课教室'               //我们取 json 中 city 的值，并将表头 title 设置为城市
+            },{
+                field: 'create_datetime', title: '创建时间'               //我们取 json 中 sign 的值，并将表头 title 设置为签名
+            },{
+                //ormatter:function(value,row,index) 对后台传入数据 进行操作 对数据重新赋值 返回 return 到前台
+                // events 触发事件
+                field: 'Button',title:"操作",align: 'center',events:operateEvents,formatter:function(value,row,index){
+                    var del = '<button type="button"  class="btn btn-danger delete" style="margin: 5px">删除</button>'
+                    var update = '<button type="button" class="btn btn-primary upgrade" id="updateModal" style="margin: 5px">更新</button>'
+                    var search = '<button type="button" class="btn btn-info search" data-toggle="modal" data-target="#searchModal" style="margin: 5px">查看学生</button>'
+                    var corse_sign = '<button type="button" class="btn btn-success" id="couser_cord" data-toggle="modal" data-target="#courseModal" style="margin: 5px">学生签到统计</button>'
+                    return [del,update,search,corse_sign].join('')
+                }
+            }
+            ],
+            responseHandler: function (res) {
+                return res.data      //在加载远程数据之前，处理响应数据格式.
+                // 我们取的值在data字段中，所以需要先进行处理，这样才能获取我们想要的结果
+            }
+        });
+
+    </script>
+{% endblock %}
+

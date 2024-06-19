@@ -1,0 +1,167 @@
+
+{% extends 'layout/manage.html' %}
+
+{% load static %}
+
+{% block content %}
+    <div class="panel panel-primary">
+    <div class="page page-header" style="text-align: center;">
+        <h3>个人主页</h3>
+    </div>
+
+    <div class="panel-body" >
+
+        <div class="col-sm-6">
+       <div class="panel panel-primary">
+  <div class="panel-heading">
+    个人信息
+  </div>
+       <div class="panel-body">
+       <form id="userform">
+       {% csrf_token %}
+      {% for filed in form %}
+          <div class="form-group" style="margin: 10px">
+                <label for="{{ filed.id_for_label }}">{{ filed.label }}</label>
+                       {% if filed.help_text %}
+                        <span>{{ filed.help_text }}</span>
+                    {% endif %}
+                {{ filed }}
+                <span class="error-msg">{{ filed.errors.0 }}</span>
+             </div>
+
+      {% endfor %}
+
+
+    <div class="col-sm-10" style="margin-left: 20%;margin-top: 30px">
+      <button type="button" class="btn btn-success" id="savebtn">保存</button>
+
+  </div>
+</form>
+       </div>
+       <div class="panel-footer">
+                 <div id="msg"></div>
+       </div>
+        </div>
+
+        </div>
+
+
+        <div CLASS="col-sm-6">
+            <div class="panel panel-primary">
+  <div class="panel-heading">
+    密码修改
+  </div>
+  <div class="panel-body">
+        <form id="updatepassword">
+
+  <div class="form-group">
+    <label>原始密码</label>
+    <input type="password" class="form-control" name="password" id="password" placeholder="旧密码">
+  </div>
+            <div class="form-group">
+    <label>新密码</label>
+    <input type="password" class="form-control" name='newpassword' id="newpassword" placeholder="新密码">
+  </div>
+            <div class="form-group">
+    <label>再次确认密码</label>
+    <input type="password" class="form-control" name='repassword' id="repassword" placeholder="确认密码">
+  </div>
+  <button type="button" class="btn btn-success" id="updatapasswordbtn" style="margin-left: 40%">确认</button>
+
+</form>
+
+  </div>
+                <div class="panel-footer">
+        <div id="error"></div>
+                </div>
+</div>
+
+        </div>
+
+
+    </div>
+
+    </div>
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+   bindClickSubmit();
+    bindChangepassword()
+});
+function  bindChangepassword() {
+
+        $("#updatapasswordbtn").click(function() {
+                 var  error=$('#error');
+
+                 var next_falge=true;
+                 error.empty();
+            var password=$('#password');
+            var newpassword=$('#newpassword')
+            var repassword=$('#repassword')
+            var data={
+                password:password.val(),
+                newpassword:newpassword.val(),
+                repassword:repassword.val()
+            }
+            if(!password.val() | !newpassword.val() | !repassword.val()){
+                 error.text("密码字段不能为空");
+                next_falge=false;
+            }
+
+            if(newpassword.val()!=repassword.val()){
+                error.text("两次密码不一致请重新输入");
+                next_falge=false;
+            }
+
+               if(newpassword.val().length<6){
+                error.text("密码不小于6位");
+                next_falge=false;
+            }
+
+        if(next_falge){
+        $.ajax({
+            url: "{% url 'web:update_password' %}",
+            type: "POST",
+            data: data,
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                      error.text(res.data)
+
+                } else {
+                    error.text(res.data)
+                }
+
+        }
+    });
+}
+        })
+}
+
+function bindClickSubmit() {
+    $("#savebtn").click(function() {
+        $('#msg').empty();
+        $('.error-msg').empty();
+        $.ajax({
+            url: "{% url 'web:user' %}",
+            type: "POST",
+            data: $('#userform').serialize(),
+            dataType: "JSON",
+            success: function(res) {
+                if (res['status']) {
+                    $('#msg').text('信息更新成功');
+                } else {
+                    $.each(res.error, function(key, value) {
+                        $("#id_" + key).next().text(value[0]);
+                    });
+                }
+            },
+
+        });
+    });}
+
+
+</script>
+{% endblock %}
