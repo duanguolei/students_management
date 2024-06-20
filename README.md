@@ -31,7 +31,7 @@ git clone https://github.com/duanguolei/students_management.git
 
 2.下载依赖
 ```shell
-cd SBug
+cd students_management
 ```
 ```shell
 pip install -r requirements.txt
