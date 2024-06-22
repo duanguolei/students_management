@@ -39,7 +39,6 @@ pip install -r requirements.txt
 
 3.配置环境
 
-> 并配置mysql,redis
 
 4.迁移数据库
 ```shell
