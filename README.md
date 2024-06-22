@@ -4,7 +4,7 @@
 
 ## 部分项目简单展示
 
-###学生端
+### 学生端
 ![img_6.png](./images/img_6.png)
 ![img_7.png](./images/img_7.png)
 ![img_8.png](./images/img_8.png)
